@@ -1,0 +1,25 @@
+[
+  { "id": "t3_a_w", "tier": 3, "score": 4, "bonusColor": "white", "cost": { "blue":  7 } },
+  { "id": "t3_a_u", "tier": 3, "score": 4, "bonusColor": "blue",  "cost": { "green": 7 } },
+  { "id": "t3_a_g", "tier": 3, "score": 4, "bonusColor": "green", "cost": { "red":   7 } },
+  { "id": "t3_a_r", "tier": 3, "score": 4, "bonusColor": "red",   "cost": { "black": 7 } },
+  { "id": "t3_a_k", "tier": 3, "score": 4, "bonusColor": "black", "cost": { "white": 7 } },
+
+  { "id": "t3_b_w", "tier": 3, "score": 5, "bonusColor": "white", "cost": { "blue":  7, "green": 3 } },
+  { "id": "t3_b_u", "tier": 3, "score": 5, "bonusColor": "blue",  "cost": { "green": 7, "red":   3 } },
+  { "id": "t3_b_g", "tier": 3, "score": 5, "bonusColor": "green", "cost": { "red":   7, "black": 3 } },
+  { "id": "t3_b_r", "tier": 3, "score": 5, "bonusColor": "red",   "cost": { "black": 7, "white": 3 } },
+  { "id": "t3_b_k", "tier": 3, "score": 5, "bonusColor": "black", "cost": { "white": 7, "blue":  3 } },
+
+  { "id": "t3_c_w", "tier": 3, "score": 4, "bonusColor": "white", "cost": { "blue":  6, "green": 3, "red":   3 } },
+  { "id": "t3_c_u", "tier": 3, "score": 4, "bonusColor": "blue",  "cost": { "green": 6, "red":   3, "black": 3 } },
+  { "id": "t3_c_g", "tier": 3, "score": 4, "bonusColor": "green", "cost": { "red":   6, "black": 3, "white": 3 } },
+  { "id": "t3_c_r", "tier": 3, "score": 4, "bonusColor": "red",   "cost": { "black": 6, "white": 3, "blue":  3 } },
+  { "id": "t3_c_k", "tier": 3, "score": 4, "bonusColor": "black", "cost": { "white": 6, "blue":  3, "green": 3 } },
+
+  { "id": "t3_d_w", "tier": 3, "score": 3, "bonusColor": "white", "cost": { "blue":  5, "green": 3, "red":   3, "black": 3 } },
+  { "id": "t3_d_u", "tier": 3, "score": 3, "bonusColor": "blue",  "cost": { "green": 5, "red":   3, "black": 3, "white": 3 } },
+  { "id": "t3_d_g", "tier": 3, "score": 3, "bonusColor": "green", "cost": { "red":   5, "black": 3, "white": 3, "blue":  3 } },
+  { "id": "t3_d_r", "tier": 3, "score": 3, "bonusColor": "red",   "cost": { "black": 5, "white": 3, "blue":  3, "green": 3 } },
+  { "id": "t3_d_k", "tier": 3, "score": 3, "bonusColor": "black", "cost": { "white": 5, "blue":  3, "green": 3, "red":   3 } }
+]

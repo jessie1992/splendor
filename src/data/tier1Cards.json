@@ -1,0 +1,49 @@
+[
+  { "id": "t1_a_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "blue":  3 } },
+  { "id": "t1_a_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "green": 3 } },
+  { "id": "t1_a_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "red":   3 } },
+  { "id": "t1_a_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "black": 3 } },
+  { "id": "t1_a_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "white": 3 } },
+
+  { "id": "t1_b_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "green": 2, "red":   1 } },
+  { "id": "t1_b_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "red":   2, "black": 1 } },
+  { "id": "t1_b_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "black": 2, "white": 1 } },
+  { "id": "t1_b_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "white": 2, "blue":  1 } },
+  { "id": "t1_b_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "blue":  2, "green": 1 } },
+
+  { "id": "t1_c_w", "tier": 1, "score": 1, "bonusColor": "white", "cost": { "blue":  4 } },
+  { "id": "t1_c_u", "tier": 1, "score": 1, "bonusColor": "blue",  "cost": { "green": 4 } },
+  { "id": "t1_c_g", "tier": 1, "score": 1, "bonusColor": "green", "cost": { "red":   4 } },
+  { "id": "t1_c_r", "tier": 1, "score": 1, "bonusColor": "red",   "cost": { "black": 4 } },
+  { "id": "t1_c_k", "tier": 1, "score": 1, "bonusColor": "black", "cost": { "white": 4 } },
+
+  { "id": "t1_d_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "blue":  2, "green": 2 } },
+  { "id": "t1_d_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "green": 2, "red":   2 } },
+  { "id": "t1_d_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "red":   2, "black": 2 } },
+  { "id": "t1_d_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "black": 2, "white": 2 } },
+  { "id": "t1_d_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "white": 2, "blue":  2 } },
+
+  { "id": "t1_e_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "blue": 1, "green": 1, "red": 1, "black": 1 } },
+  { "id": "t1_e_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "white": 1, "green": 1, "red": 1, "black": 1 } },
+  { "id": "t1_e_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "white": 1, "blue": 1, "red": 1, "black": 1 } },
+  { "id": "t1_e_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "white": 1, "blue": 1, "green": 1, "black": 1 } },
+  { "id": "t1_e_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "white": 1, "blue": 1, "green": 1, "red": 1 } },
+
+  { "id": "t1_f_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "blue":  2, "green": 1, "red":   1, "black": 1 } },
+  { "id": "t1_f_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "green": 2, "red":   1, "black": 1, "white": 1 } },
+  { "id": "t1_f_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "red":   2, "black": 1, "white": 1, "blue":  1 } },
+  { "id": "t1_f_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "black": 2, "white": 1, "blue":  1, "green": 1 } },
+  { "id": "t1_f_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "white": 2, "blue":  1, "green": 1, "red":   1 } },
+
+  { "id": "t1_g_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "blue":  2, "green": 2, "red":   1 } },
+  { "id": "t1_g_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "green": 2, "red":   2, "black": 1 } },
+  { "id": "t1_g_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "red":   2, "black": 2, "white": 1 } },
+  { "id": "t1_g_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "black": 2, "white": 2, "blue":  1 } },
+  { "id": "t1_g_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "white": 2, "blue":  2, "green": 1 } },
+
+  { "id": "t1_h_w", "tier": 1, "score": 0, "bonusColor": "white", "cost": { "blue":  3, "green": 1, "red":   1 } },
+  { "id": "t1_h_u", "tier": 1, "score": 0, "bonusColor": "blue",  "cost": { "green": 3, "red":   1, "black": 1 } },
+  { "id": "t1_h_g", "tier": 1, "score": 0, "bonusColor": "green", "cost": { "red":   3, "black": 1, "white": 1 } },
+  { "id": "t1_h_r", "tier": 1, "score": 0, "bonusColor": "red",   "cost": { "black": 3, "white": 1, "blue":  1 } },
+  { "id": "t1_h_k", "tier": 1, "score": 0, "bonusColor": "black", "cost": { "white": 3, "blue":  1, "green": 1 } }
+]
