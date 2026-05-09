@@ -3,7 +3,8 @@ import { GemColor } from './types'
 import type { Card, CardLevel, GameState, GemStash, Noble, Player } from './types'
 import { ALL_GENERATED_CARDS as ALL_CARDS } from './data/CardGenerator'
 import { ALL_NOBLES } from './data/cards'
-import { purchaseCard as applyPurchase, reserveCard as applyReserve, reserveFromDeck as applyReserveFromDeck } from './gameLogic'
+import { purchaseCard as applyPurchase, reserveCard as applyReserve, reserveFromDeck as applyReserveFromDeck, applyDrawTokens } from './gameLogic'
+import { computeAiAction } from './ai'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -27,10 +28,11 @@ function emptyStash(): GemStash {
   }
 }
 
-function makePlayer(index: number, name: string): Player {
+function makePlayer(index: number, name: string, isCpu: boolean): Player {
   return {
     id: `player-${index}`,
     name,
+    isCpu,
     gems: emptyStash(),
     purchasedCards: [],
     reservedCards: [],
@@ -69,7 +71,7 @@ export type GameStore = GameState & {
    * Shuffles all three tiers, deals 4 face-up cards per row, distributes
    * gem tokens according to player count, and places (playerCount + 1) nobles.
    */
-  initGame: (playerNames: string[]) => void
+  initGame: (players: { name: string; isCpu: boolean }[]) => void
 
   /**
    * Takes gem tokens for the current player.
@@ -109,13 +111,20 @@ export type GameStore = GameState & {
    * winners are determined (highest score; fewest purchased cards as tiebreaker).
    */
   nextTurn: () => void
+
+  /**
+   * Computes and applies one AI move for the current player, then advances
+   * the turn — all in a single atomic state update.
+   * No-op if the current player is human or the game is not active.
+   */
+  doAiTurn: () => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   ...emptyGameState,
 
-  initGame: (playerNames: string[]) => {
-    const n = playerNames.length
+  initGame: (playerDefs: { name: string; isCpu: boolean }[]) => {
+    const n = playerDefs.length
     if (n < 2 || n > 4) throw new Error('Splendor requires 2–4 players')
 
     // Shuffle each tier independently
@@ -147,7 +156,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Place (playerCount + 1) random nobles
     const nobles: Noble[] = shuffle(ALL_NOBLES).slice(0, n + 1)
 
-    const players = playerNames.map((name, i) => makePlayer(i, name))
+    const players = playerDefs.map((p, i) => makePlayer(i, p.name, p.isCpu))
 
     set({
       players,
@@ -234,5 +243,47 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     set({ currentPlayerIndex: nextIndex })
+  },
+
+  doAiTurn: () => {
+    const state = get()
+    const { phase, currentPlayerIndex } = state
+    if (phase !== 'playing' && phase !== 'lastRound') return
+    const player = state.players[currentPlayerIndex]
+    if (!player.isCpu) return
+
+    // Compute action and apply it — pure function, no intermediate set()
+    const action = computeAiAction(state, currentPlayerIndex)
+    let next: GameState = state
+
+    switch (action.type) {
+      case 'purchase':
+        next = applyPurchase(state, currentPlayerIndex, action.card)
+        break
+      case 'reserve':
+        next = applyReserve(state, currentPlayerIndex, action.card)
+        break
+      case 'reserveFromDeck':
+        next = applyReserveFromDeck(state, currentPlayerIndex, action.level)
+        break
+      case 'drawTokens':
+        if (action.colors.length > 0)
+          next = applyDrawTokens(state, action.colors)
+        break
+    }
+
+    // Advance turn atomically in the same set()
+    const n = next.players.length
+    const nextIndex = (currentPlayerIndex + 1) % n
+
+    if (next.phase === 'lastRound' && nextIndex === 0) {
+      const maxScore = Math.max(...next.players.map(p => p.score))
+      const leaders  = next.players.filter(p => p.score === maxScore)
+      const minCards = Math.min(...leaders.map(p => p.purchasedCards.length))
+      const winners  = leaders.filter(p => p.purchasedCards.length === minCards)
+      set({ ...next, currentPlayerIndex: nextIndex, phase: 'ended', winners })
+    } else {
+      set({ ...next, currentPlayerIndex: nextIndex })
+    }
   },
 }))

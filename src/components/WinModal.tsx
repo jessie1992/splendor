@@ -68,7 +68,7 @@ export function WinModal() {
 
           {/* Play again */}
           <button
-            onClick={() => initGame(players.map(p => p.name))}
+            onClick={() => initGame(players.map(p => ({ name: p.name, isCpu: p.isCpu })))}
             className="w-full py-3.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 text-gray-900 font-black text-base transition-colors shadow-lg"
           >
             Play Again

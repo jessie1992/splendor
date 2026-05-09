@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, memo } from 'react'
+import { useState, useCallback, useMemo, useRef, memo, useEffect } from 'react'
 import { useShallow } from 'zustand/react/shallow'
 import { GemColor } from '../types'
 import type { Card, CardLevel, GemStash, Noble, Player, PurchasableGem } from '../types'
@@ -176,7 +176,7 @@ const GemSupply = memo(function GemSupply({
   )
 })
 
-const PlayerPanel = memo(function PlayerPanel({ player, isActive }: { player: Player; isActive: boolean }) {
+const PlayerPanel = memo(function PlayerPanel({ player, isActive }: { player: Player; isActive: boolean; }) {
   const bonusesFor = (c: PurchasableGem) =>
     player.purchasedCards.filter(card => card.bonus === c).length
 
@@ -192,6 +192,7 @@ const PlayerPanel = memo(function PlayerPanel({ player, isActive }: { player: Pl
       <div className="flex items-center justify-between mb-2 gap-2">
         <span className={`font-semibold text-sm truncate leading-none ${isActive ? 'text-yellow-300' : 'text-white/80'}`}>
           {isActive && <span className="mr-1 text-yellow-400">▶</span>}
+          {player.isCpu && <span className="mr-1">🤖</span>}
           {player.name}
         </span>
         <span className="text-yellow-400 font-black text-xl tabular-nums leading-none flex-shrink-0">
@@ -288,6 +289,7 @@ export function Board() {
   const reserveFromDeck = useGameStore(s => s.reserveFromDeck)
   const drawTokens      = useGameStore(s => s.drawTokens)
   const nextTurn        = useGameStore(s => s.nextTurn)
+  const doAiTurn        = useGameStore(s => s.doAiTurn)
 
   const currentPlayer = players[currentPlayerIndex]
 
@@ -325,6 +327,11 @@ export function Board() {
     return ids
   }, [currentPlayer, board.visibleCards])
 
+  // Keep a ref so handleCardClick can read the latest affordableIds without
+  // being recreated every time it changes (which would defeat React.memo on GameCard).
+  const affordableRef = useRef(affordableIds)
+  affordableRef.current = affordableIds
+
   // ── Handlers ──────────────────────────────────────────────────────────────
 
   // Gem click: uses functional setState — no dependency on `pending` snapshot
@@ -361,10 +368,12 @@ export function Board() {
     nextTurn()
   }, [isValidSelection, distinctColors, pending, drawTokens, nextTurn])
 
+  // Stable reference — reads affordability from ref, so GameCard memo is preserved.
   const handleCardClick = useCallback((card: Card) => {
+    if (!affordableRef.current.has(card.id)) return
     setPendingCard(prev => prev?.id === card.id ? null : card)
     setPending({})
-  }, [])
+  }, [])  // no deps — stable across all renders
 
   const handleReserve = useCallback((card: Card) => {
     if (currentPlayer.reservedCards.length >= 3) return
@@ -385,6 +394,15 @@ export function Board() {
   const handleCancelPurchase = useCallback(() => setPendingCard(null), [])
   const handleClearGems      = useCallback(() => setPending({}), [])
   const handleEndTurn        = useCallback(() => { setPending({}); nextTurn() }, [nextTurn])
+
+  // ── AI auto-play ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase !== 'playing' && phase !== 'lastRound') return
+    if (!currentPlayer?.isCpu) return
+
+    const id = setTimeout(doAiTurn, 700)
+    return () => clearTimeout(id)
+  }, [currentPlayerIndex, phase, currentPlayer?.isCpu, doAiTurn])
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -436,8 +454,8 @@ export function Board() {
                   <GameCard
                     card={card}
                     isSelected={pendingCard?.id === card.id}
-                    onClick={affordableIds.has(card.id) ? () => handleCardClick(card) : undefined}
-                    className={affordableIds.has(card.id) ? '' : 'opacity-35'}
+                    onCardClick={handleCardClick}
+                    className={affordableIds.has(card.id) ? '' : 'opacity-35 cursor-not-allowed'}
                   />
                   {pendingCard?.id === card.id && (
                     <PurchaseOverlay onConfirm={confirmPurchase} onCancel={handleCancelPurchase} />
@@ -464,8 +482,8 @@ export function Board() {
                     <GameCard
                       card={card}
                       isSelected={pendingCard?.id === card.id}
-                      onClick={affordableIds.has(card.id) ? () => handleCardClick(card) : undefined}
-                      className={affordableIds.has(card.id) ? '' : 'opacity-35'}
+                      onCardClick={handleCardClick}
+                      className={affordableIds.has(card.id) ? '' : 'opacity-35 cursor-not-allowed'}
                     />
                     {pendingCard?.id === card.id && (
                       <PurchaseOverlay onConfirm={confirmPurchase} onCancel={handleCancelPurchase} />

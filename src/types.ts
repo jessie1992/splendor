@@ -49,6 +49,7 @@ export interface Noble {
 export interface Player {
   id: string
   name: string
+  isCpu: boolean
   /** Loose gems held in hand (max 10 total). */
   gems: GemStash
   /** Cards the player has purchased (contributes bonuses + score). */

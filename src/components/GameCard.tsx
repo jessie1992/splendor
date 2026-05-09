@@ -62,16 +62,17 @@ function CostToken({ color, count }: { color: GemColor; count: number }) {
 // ── GameCard ──────────────────────────────────────────────────────────────────
 
 export interface GameCardProps {
-  card:        CardData
-  onClick?:    () => void
-  isSelected?: boolean
-  faceDown?:   boolean
-  className?:  string
+  card:          CardData
+  /** Pass a stable (useCallback) reference — called with the card as argument. */
+  onCardClick?:  (card: CardData) => void
+  isSelected?:   boolean
+  faceDown?:     boolean
+  className?:    string
 }
 
 export const GameCard = memo(function GameCard({
   card,
-  onClick,
+  onCardClick,
   isSelected = false,
   faceDown   = false,
   className  = '',
@@ -80,12 +81,12 @@ export const GameCard = memo(function GameCard({
   if (faceDown) {
     return (
       <div
-        role={onClick ? 'button' : undefined}
-        onClick={onClick}
+        role={onCardClick ? 'button' : undefined}
+        onClick={onCardClick ? () => onCardClick(card) : undefined}
         className={[
           'relative w-36 h-52 rounded-xl overflow-hidden shadow-xl select-none',
           'border-2 border-zinc-700 bg-zinc-900',
-          onClick ? 'cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95' : '',
+          onCardClick ? 'cursor-pointer transition-transform duration-150 hover:scale-105 active:scale-95' : '',
           className,
         ].join(' ')}
       >
@@ -108,17 +109,17 @@ export const GameCard = memo(function GameCard({
 
   return (
     <div
-      role={onClick ? 'button' : undefined}
-      onClick={onClick}
+      role={onCardClick ? 'button' : undefined}
+      onClick={onCardClick ? () => onCardClick(card) : undefined}
       className={[
         'relative w-36 h-52 rounded-xl overflow-hidden select-none',
         'bg-gradient-to-b', s.gradient,
         'border-2', s.border,
-        onClick
+        onCardClick
           ? 'shadow-[0_0_18px_rgba(212,175,55,0.45)] hover:shadow-[0_0_28px_rgba(212,175,55,0.7)]'
           : 'shadow-2xl',
         'transition-all duration-150',
-        onClick ? 'cursor-pointer hover:scale-105 hover:brightness-110 active:scale-95' : '',
+        onCardClick ? 'cursor-pointer hover:scale-105 hover:brightness-110 active:scale-95' : '',
         isSelected ? 'ring-4 ring-offset-2 ring-offset-gray-900 ring-yellow-400 brightness-110' : '',
         className,
       ].join(' ')}

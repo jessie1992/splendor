@@ -255,6 +255,41 @@ export function reserveCard(state: GameState, playerIndex: number, card: Card): 
 }
 
 /**
+ * Non-throwing version of drawTokens used by the AI.
+ * Accepts a flat GemColor[] (duplicates = take-2-same).
+ * Returns the same state if the action is invalid.
+ */
+export function applyDrawTokens(state: GameState, colors: GemColor[]): GameState {
+  if (colors.length === 0 || colors.length > 3) return state
+
+  const player     = state.players[state.currentPlayerIndex]
+  const supplyGems = { ...state.board.gems }
+  const playerGems = { ...player.gems }
+  const totalHeld  = Object.values(playerGems).reduce((a, b) => a + b, 0)
+  if (totalHeld + colors.length > 10) return state
+
+  const isDouble = colors.length === 2 && colors[0] === colors[1]
+  if (isDouble) {
+    if (supplyGems[colors[0]] < 4) return state
+  } else {
+    if (new Set(colors).size !== colors.length) return state
+    for (const c of colors) {
+      if ((c as GemColor) === GemColor.Gold || supplyGems[c] < 1) return state
+    }
+  }
+
+  for (const c of colors) { playerGems[c]++; supplyGems[c]-- }
+
+  return {
+    ...state,
+    players: state.players.map((p, i) =>
+      i === state.currentPlayerIndex ? { ...p, gems: playerGems } : p
+    ),
+    board: { ...state.board, gems: supplyGems },
+  }
+}
+
+/**
  * Returns a new GameState after the current player takes tokens.
  *
  * Valid actions:

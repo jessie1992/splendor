@@ -5,15 +5,19 @@ import { WinModal } from './components/WinModal'
 
 // ── Setup screen ──────────────────────────────────────────────────────────────
 
+const DEFAULT_NAMES = ['Player 1', 'Player 2', 'Player 3', 'Player 4']
+
 function SetupScreen() {
   const initGame = useGameStore(s => s.initGame)
-  const [count, setCount]   = useState(2)
-  const [names, setNames]   = useState(['Alice', 'Bob', 'Charlie', 'Dave'])
+  const [count, setCount] = useState(2)
+  const [names, setNames] = useState(DEFAULT_NAMES)
+  const [isCpu, setIsCpu] = useState([false, false, false, false])
 
   const setName = (i: number, value: string) => {
-    const updated = [...names]
-    updated[i] = value
-    setNames(updated)
+    const updated = [...names]; updated[i] = value; setNames(updated)
+  }
+  const toggleCpu = (i: number) => {
+    const updated = [...isCpu]; updated[i] = !updated[i]; setIsCpu(updated)
   }
 
   const canStart = names.slice(0, count).every(n => n.trim().length > 0)
@@ -53,23 +57,47 @@ function SetupScreen() {
           </div>
         </div>
 
-        {/* Name inputs */}
+        {/* Name inputs + CPU toggles */}
         <div className="space-y-2">
+          <label className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest block">
+            Players
+          </label>
           {Array.from({ length: count }, (_, i) => (
-            <input
-              key={i}
-              value={names[i]}
-              onChange={e => setName(i, e.target.value)}
-              placeholder={`Player ${i + 1}`}
-              className="w-full bg-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 border border-white/10 focus:border-yellow-500/50 focus:outline-none transition-colors"
-            />
+            <div key={i} className="flex gap-2 items-center">
+              <input
+                value={names[i]}
+                onChange={e => setName(i, e.target.value)}
+                disabled={isCpu[i]}
+                placeholder={`Player ${i + 1}`}
+                className="flex-1 min-w-0 bg-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 border border-white/10 focus:border-yellow-500/50 focus:outline-none transition-colors disabled:opacity-40"
+              />
+              <button
+                onClick={() => toggleCpu(i)}
+                title={isCpu[i] ? 'Switch to human' : 'Switch to CPU'}
+                className={[
+                  'flex-shrink-0 w-10 h-9 rounded-lg text-base font-bold transition-all',
+                  isCpu[i]
+                    ? 'bg-blue-600 text-white shadow-[0_0_10px_rgba(37,99,235,0.5)]'
+                    : 'bg-white/10 text-white/40 hover:bg-white/20 hover:text-white/70',
+                ].join(' ')}
+              >
+                🤖
+              </button>
+            </div>
           ))}
         </div>
 
         {/* Start button */}
         <button
           disabled={!canStart}
-          onClick={() => initGame(names.slice(0, count).map(n => n.trim()))}
+          onClick={() =>
+            initGame(
+              Array.from({ length: count }, (_, i) => ({
+                name: isCpu[i] ? `CPU ${i + 1}` : names[i].trim(),
+                isCpu: isCpu[i],
+              }))
+            )
+          }
           className="w-full py-3 rounded-xl bg-yellow-500 hover:bg-yellow-400 active:bg-yellow-600 disabled:opacity-40 disabled:cursor-not-allowed text-gray-900 font-black text-base transition-colors shadow-lg"
         >
           Start Game
