@@ -103,6 +103,7 @@ function SetupScreen() {
           Start Game
         </button>
       </div>
+      <p className="text-gray-700 text-xs tracking-widest">Developed by Jessie</p>
     </div>
   )
 }
