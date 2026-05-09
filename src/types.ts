@@ -93,4 +93,6 @@ export interface GameState {
   triggeringPlayerIndex: number | null
   /** Winner(s) after the game ends (ties are possible). */
   winners: Player[]
+  /** Total number of turns taken across all players. */
+  moveCount: number
 }

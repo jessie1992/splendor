@@ -1,7 +1,7 @@
 import { useGameStore } from '../store'
 
 export function WinModal() {
-  const { phase, winners, players, initGame } = useGameStore()
+  const { phase, winners, players, moveCount, initGame } = useGameStore()
 
   if (phase !== 'ended') return null
 
@@ -28,6 +28,7 @@ export function WinModal() {
             <p className="text-yellow-400 font-semibold mt-1 text-lg">
               {winNames} {isTie ? 'are tied for first!' : 'wins!'}
             </p>
+            <p className="text-gray-500 text-xs mt-1">{moveCount} total moves</p>
           </div>
 
           {/* Final scoreboard */}

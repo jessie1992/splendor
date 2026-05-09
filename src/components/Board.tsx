@@ -342,12 +342,13 @@ const PurchaseOverlay = memo(function PurchaseOverlay({
 
 export function Board() {
   // ── Store — state via shallow, actions are stable references ────────────
-  const { players, currentPlayerIndex, board, phase } = useGameStore(
+  const { players, currentPlayerIndex, board, phase, moveCount } = useGameStore(
     useShallow(s => ({
       players:            s.players,
       currentPlayerIndex: s.currentPlayerIndex,
       board:              s.board,
       phase:              s.phase,
+      moveCount:          s.moveCount,
     }))
   )
   const goHome          = useGameStore(s => s.goHome)
@@ -488,7 +489,6 @@ export function Board() {
 
   const handleCancelPurchase = useCallback(() => setPendingCard(null), [])
   const handleClearGems      = useCallback(() => setPending({}), [])
-  const handleEndTurn        = useCallback(() => { setPending({}); nextTurn() }, [nextTurn])
 
   // ── AI auto-play ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -658,17 +658,12 @@ export function Board() {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-400">
-                <span className="text-white font-semibold">{currentPlayer.name}</span>'s turn
+              <span className="text-sm font-semibold text-white/40 tabular-nums">
+                {moveCount} move{moveCount !== 1 ? 's' : ''}
               </span>
-              {!discardMode && (
-                <button
-                  onClick={handleEndTurn}
-                  className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-sm font-semibold transition-colors border border-white/10"
-                >
-                  End Turn
-                </button>
-              )}
+              <span className="text-base font-bold text-yellow-300">
+                {currentPlayer.name}'s turn
+              </span>
             </div>
           </div>
 

@@ -62,6 +62,7 @@ const emptyGameState: GameState = {
   phase: 'setup',
   triggeringPlayerIndex: null,
   winners: [],
+  moveCount: 0,
 }
 
 // ── Store ─────────────────────────────────────────────────────────────────────
@@ -174,6 +175,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       phase: 'playing',
       triggeringPlayerIndex: null,
       winners: [],
+      moveCount: 0,
       board: {
         decks:        { 1: rem1, 2: rem2, 3: rem3 } as Record<CardLevel, Card[]>,
         visibleCards: { 1: vis1, 2: vis2, 3: vis3 },
@@ -258,15 +260,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (state.phase === 'lastRound' && nextIndex === 0) {
       const maxScore = Math.max(...state.players.map(p => p.score))
       const leaders  = state.players.filter(p => p.score === maxScore)
-      // Tiebreaker: fewest purchased cards
       const minCards = Math.min(...leaders.map(p => p.purchasedCards.length))
       const winners  = leaders.filter(p => p.purchasedCards.length === minCards)
 
-      set({ currentPlayerIndex: nextIndex, phase: 'ended', winners })
+      set({ currentPlayerIndex: nextIndex, phase: 'ended', winners, moveCount: state.moveCount + 1 })
       return
     }
 
-    set({ currentPlayerIndex: nextIndex })
+    set({ currentPlayerIndex: nextIndex, moveCount: state.moveCount + 1 })
   },
 
   goHome: () => set(emptyGameState),
@@ -307,9 +308,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const leaders  = next.players.filter(p => p.score === maxScore)
       const minCards = Math.min(...leaders.map(p => p.purchasedCards.length))
       const winners  = leaders.filter(p => p.purchasedCards.length === minCards)
-      set({ ...next, currentPlayerIndex: nextIndex, phase: 'ended', winners })
+      set({ ...next, currentPlayerIndex: nextIndex, phase: 'ended', winners, moveCount: next.moveCount + 1 })
     } else {
-      set({ ...next, currentPlayerIndex: nextIndex })
+      set({ ...next, currentPlayerIndex: nextIndex, moveCount: next.moveCount + 1 })
     }
   },
 }))
