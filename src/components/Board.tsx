@@ -350,6 +350,7 @@ export function Board() {
       phase:              s.phase,
     }))
   )
+  const goHome          = useGameStore(s => s.goHome)
   const purchaseCard    = useGameStore(s => s.purchaseCard)
   const reserveCard     = useGameStore(s => s.reserveCard)
   const reserveFromDeck = useGameStore(s => s.reserveFromDeck)
@@ -513,6 +514,14 @@ export function Board() {
           backgroundSize: '48px 48px',
         }}
       />
+
+      {/* Home button */}
+      <button
+        onClick={goHome}
+        className="absolute top-3 right-4 z-30 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-xs font-semibold text-white/60 hover:text-white transition-all border border-white/10"
+      >
+        ← Home
+      </button>
 
       {phase === 'lastRound' && (
         <div className="bg-yellow-600/90 text-center py-2 px-4 text-sm font-semibold tracking-wide">

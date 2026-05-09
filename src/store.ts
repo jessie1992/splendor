@@ -125,6 +125,9 @@ export type GameStore = GameState & {
    * No-op if the current player is human or the game is not active.
    */
   doAiTurn: () => void
+
+  /** Resets the game back to the setup screen. */
+  goHome: () => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -265,6 +268,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({ currentPlayerIndex: nextIndex })
   },
+
+  goHome: () => set(emptyGameState),
 
   doAiTurn: () => {
     const state = get()
