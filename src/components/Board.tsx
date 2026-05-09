@@ -176,6 +176,72 @@ const GemSupply = memo(function GemSupply({
   )
 })
 
+const DiscardPanel = memo(function DiscardPanel({
+  playerGems, toReturn, mustReturn, onToggle, onConfirm, onReset,
+}: {
+  playerGems: GemStash
+  toReturn:   PendingGems
+  mustReturn: number
+  onToggle:   (color: GemColor) => void
+  onConfirm:  () => void
+  onReset:    () => void
+}) {
+  const returnCount = Object.values(toReturn).reduce((a, b) => a + (b ?? 0), 0)
+  const remaining   = mustReturn - returnCount
+
+  return (
+    <div className="rounded-xl bg-red-950/60 border border-red-500/50 px-4 py-3 space-y-3">
+      <p className="text-red-300 font-semibold text-sm">
+        Over limit — select {remaining > 0 ? `${remaining} more gem${remaining > 1 ? 's' : ''}` : 'done'} to return
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {ALL_GEM_COLORS.map(color => {
+          const held = playerGems[color]
+          const ret  = toReturn[color] ?? 0
+          if (held === 0) return null
+          return (
+            <button
+              key={color}
+              onClick={() => onToggle(color)}
+              className={[
+                'relative flex flex-col items-center px-2.5 py-1.5 rounded-xl border-2 transition-all select-none',
+                ret > 0
+                  ? 'border-red-400 bg-red-500/25 scale-105'
+                  : remaining > 0
+                    ? 'border-white/20 bg-white/5 hover:bg-white/15 cursor-pointer'
+                    : 'border-white/10 bg-white/5 opacity-50 cursor-not-allowed',
+              ].join(' ')}
+            >
+              <GemIcon color={color} size={20} />
+              <span className="text-xs font-bold text-white tabular-nums mt-0.5">{held - ret}</span>
+              {ret > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center leading-none">
+                  -{ret}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={onConfirm}
+          disabled={remaining !== 0}
+          className="px-4 py-1.5 rounded-lg bg-red-500 hover:bg-red-400 active:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-bold transition-colors"
+        >
+          Confirm Return
+        </button>
+        <button
+          onClick={onReset}
+          className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-sm font-semibold transition-colors"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  )
+})
+
 const PlayerPanel = memo(function PlayerPanel({ player, isActive }: { player: Player; isActive: boolean; }) {
   const bonusesFor = (c: PurchasableGem) =>
     player.purchasedCards.filter(card => card.bonus === c).length
@@ -288,6 +354,7 @@ export function Board() {
   const reserveCard     = useGameStore(s => s.reserveCard)
   const reserveFromDeck = useGameStore(s => s.reserveFromDeck)
   const drawTokens      = useGameStore(s => s.drawTokens)
+  const returnTokens    = useGameStore(s => s.returnTokens)
   const nextTurn        = useGameStore(s => s.nextTurn)
   const doAiTurn        = useGameStore(s => s.doAiTurn)
 
@@ -305,15 +372,17 @@ export function Board() {
   }, [pendingCard, purchaseCard, nextTurn])
 
   // ── Gem selection ─────────────────────────────────────────────────────────
-  const [pending, setPending] = useState<PendingGems>({})
+  const [pending, setPending]     = useState<PendingGems>({})
+  const [discardMode, setDiscard] = useState(false)
+  const [toReturn, setToReturn]   = useState<PendingGems>({})
 
   const totalPending   = Object.values(pending).reduce((a, b) => a + (b ?? 0), 0)
   const distinctColors = (Object.keys(pending) as GemColor[]).filter(c => (pending[c] ?? 0) > 0)
   const hasDouble      = distinctColors.some(c => (pending[c] ?? 0) >= 2)
   const totalHeld      = Object.values(currentPlayer.gems).reduce((a, b) => a + b, 0)
-  const wouldExceedCap = totalHeld + totalPending > 10
+  const mustReturn     = Math.max(0, totalHeld - 10)  // > 0 only when in discard mode
   const isValidSelection =
-    totalPending > 0 && !wouldExceedCap &&
+    totalPending > 0 &&
     (hasDouble || distinctColors.length === totalPending)
 
   // ── Memoised affordability set — recomputed only when player/board changes ─
@@ -365,8 +434,33 @@ export function Board() {
     }
     drawTokens(colors)
     setPending({})
+    if (totalHeld + totalPending > 10) {
+      setDiscard(true)
+      setToReturn({})
+    } else {
+      nextTurn()
+    }
+  }, [isValidSelection, distinctColors, pending, drawTokens, nextTurn, totalHeld, totalPending])
+
+  const handleToggleReturn = useCallback((color: GemColor) => {
+    setToReturn(prev => {
+      const current  = prev[color] ?? 0
+      const maxForColor = currentPlayer.gems[color]
+      if (current >= maxForColor) {
+        const n = { ...prev }; delete n[color]; return n
+      }
+      return { ...prev, [color]: current + 1 }
+    })
+  }, [currentPlayer.gems])
+
+  const handleConfirmReturn = useCallback(() => {
+    returnTokens(toReturn)
+    setDiscard(false)
+    setToReturn({})
     nextTurn()
-  }, [isValidSelection, distinctColors, pending, drawTokens, nextTurn])
+  }, [returnTokens, toReturn, nextTurn])
+
+  const handleResetReturn = useCallback(() => setToReturn({}), [])
 
   // Stable reference — reads affordability from ref, so GameCard memo is preserved.
   const handleCardClick = useCallback((card: Card) => {
@@ -512,22 +606,31 @@ export function Board() {
         {/* ── Bottom bar ────────────────────────────────────────────────── */}
         <div className="space-y-3 pt-4 border-t border-white/10">
 
-          <div className="rounded-xl bg-gray-800/60 border border-white/10 backdrop-blur-sm px-4 py-3">
-            <GemSupply gems={board.gems} pending={pending} onGemClick={handleGemClick} />
-          </div>
+          {discardMode ? (
+            <DiscardPanel
+              playerGems={currentPlayer.gems}
+              toReturn={toReturn}
+              mustReturn={mustReturn}
+              onToggle={handleToggleReturn}
+              onConfirm={handleConfirmReturn}
+              onReset={handleResetReturn}
+            />
+          ) : (
+            <div className="rounded-xl bg-gray-800/60 border border-white/10 backdrop-blur-sm px-4 py-3">
+              <GemSupply gems={board.gems} pending={pending} onGemClick={handleGemClick} />
+            </div>
+          )}
 
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2 min-h-[36px]">
-              {totalPending > 0 && (
+              {!discardMode && totalPending > 0 && (
                 <>
                   <span className="text-sm text-gray-400">
                     Take {totalPending} gem{totalPending > 1 ? 's' : ''}
+                    {totalHeld + totalPending > 10 && (
+                      <span className="ml-1 text-yellow-400">(will need to return {totalHeld + totalPending - 10})</span>
+                    )}
                   </span>
-                  {wouldExceedCap && (
-                    <span className="text-xs text-red-400 font-semibold">
-                      Exceeds 10-token limit ({totalHeld} held)
-                    </span>
-                  )}
                   <button
                     onClick={handleTakeGems}
                     disabled={!isValidSelection}
@@ -549,12 +652,14 @@ export function Board() {
               <span className="text-sm text-gray-400">
                 <span className="text-white font-semibold">{currentPlayer.name}</span>'s turn
               </span>
-              <button
-                onClick={handleEndTurn}
-                className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-sm font-semibold transition-colors border border-white/10"
-              >
-                End Turn
-              </button>
+              {!discardMode && (
+                <button
+                  onClick={handleEndTurn}
+                  className="px-5 py-2 rounded-lg bg-white/10 hover:bg-white/20 active:bg-white/30 text-sm font-semibold transition-colors border border-white/10"
+                >
+                  End Turn
+                </button>
+              )}
             </div>
           </div>
 

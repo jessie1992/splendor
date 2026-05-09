@@ -78,9 +78,16 @@ export type GameStore = GameState & {
    * Pass an array of colors to take (duplicates allowed for "take 2 same"):
    *   [white, blue, green]  → take 1 each of 3 different colors
    *   [blue, blue]          → take 2 blue (supply must have ≥ 4)
+   * May result in > 10 tokens held — caller must then use returnTokens.
    * Silently returns on invalid input.
    */
   drawTokens: (colors: GemColor[]) => void
+
+  /**
+   * Returns specific tokens from the current player's hand back to the supply.
+   * Used after drawTokens when the player exceeds 10 tokens.
+   */
+  returnTokens: (toReturn: Partial<Record<GemColor, number>>) => void
 
   /**
    * Attempts to purchase `card` for the current player.
@@ -180,17 +187,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const playerGems = { ...player.gems }
     const supplyGems = { ...board.gems }
 
-    // 10-token cap
-    const totalHeld = Object.values(player.gems).reduce((a, b) => a + b, 0)
-    if (totalHeld + colors.length > 10) return
-
     const isDoubleSame = colors.length === 2 && colors[0] === colors[1]
 
     if (isDoubleSame) {
-      // Two-same: supply must have ≥ 4
       if (supplyGems[colors[0]] < 4) return
     } else {
-      // Different colors: no duplicates, each must be available, no gold
       if (new Set(colors).size !== colors.length) return
       for (const c of colors) {
         if (c === GemColor.Gold || supplyGems[c] < 1) return
@@ -200,6 +201,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
     for (const c of colors) {
       playerGems[c]++
       supplyGems[c]--
+    }
+
+    set({
+      players: players.map((p, i) =>
+        i === currentPlayerIndex ? { ...p, gems: playerGems } : p
+      ),
+      board: { ...board, gems: supplyGems },
+    })
+  },
+
+  returnTokens: (toReturn: Partial<Record<GemColor, number>>) => {
+    const { players, currentPlayerIndex, board } = get()
+    const player     = players[currentPlayerIndex]
+    const playerGems = { ...player.gems }
+    const supplyGems = { ...board.gems }
+
+    for (const [color, count] of Object.entries(toReturn) as [GemColor, number][]) {
+      if (!count || count <= 0 || playerGems[color] < count) return
+      playerGems[color] -= count
+      supplyGems[color] += count
     }
 
     set({

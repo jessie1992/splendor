@@ -265,8 +265,6 @@ export function applyDrawTokens(state: GameState, colors: GemColor[]): GameState
   const player     = state.players[state.currentPlayerIndex]
   const supplyGems = { ...state.board.gems }
   const playerGems = { ...player.gems }
-  const totalHeld  = Object.values(playerGems).reduce((a, b) => a + b, 0)
-  if (totalHeld + colors.length > 10) return state
 
   const isDouble = colors.length === 2 && colors[0] === colors[1]
   if (isDouble) {
