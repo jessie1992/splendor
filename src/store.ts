@@ -65,6 +65,22 @@ const emptyGameState: GameState = {
   moveCount: 0,
 }
 
+// ── Turn-advance helper (shared by human and AI paths) ───────────────────────
+
+function advanceGameState(state: GameState): GameState {
+  const n         = state.players.length
+  const nextIndex = (state.currentPlayerIndex + 1) % n
+
+  if (state.phase === 'lastRound' && nextIndex === 0) {
+    const maxScore = Math.max(...state.players.map(p => p.score))
+    const leaders  = state.players.filter(p => p.score === maxScore)
+    const minCards = Math.min(...leaders.map(p => p.purchasedCards.length))
+    const winners  = leaders.filter(p => p.purchasedCards.length === minCards)
+    return { ...state, currentPlayerIndex: nextIndex, phase: 'ended', winners, moveCount: state.moveCount + 1 }
+  }
+  return { ...state, currentPlayerIndex: nextIndex, moveCount: state.moveCount + 1 }
+}
+
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 export type GameStore = GameState & {
@@ -112,6 +128,16 @@ export type GameStore = GameState & {
    * Awards 1 gold if available and the player holds fewer than 10 tokens.
    */
   reserveFromDeck: (level: CardLevel) => void
+
+  /**
+   * Atomic variants — apply action + advance turn in a single set() call,
+   * eliminating the double re-render caused by separate purchaseCard/nextTurn.
+   */
+  completePurchase:        (card:   Card)      => void
+  completeReserve:         (card:   Card)      => void
+  completeReserveFromDeck: (level:  CardLevel) => void
+  completeDrawTokens:      (colors: GemColor[]) => void
+  completeReturn:          (toReturn: Partial<Record<GemColor, number>>) => void
 
   /**
    * Advances to the next player. If we are already in the 'lastRound' phase
@@ -251,66 +277,70 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set(applyReserveFromDeck(state, state.currentPlayerIndex, level))
   },
 
-  nextTurn: () => {
-    const state = get()
-    const n = state.players.length
-    const nextIndex = (state.currentPlayerIndex + 1) % n
-
-    // Completing the final round: wrap back to player 0 while in lastRound
-    if (state.phase === 'lastRound' && nextIndex === 0) {
-      const maxScore = Math.max(...state.players.map(p => p.score))
-      const leaders  = state.players.filter(p => p.score === maxScore)
-      const minCards = Math.min(...leaders.map(p => p.purchasedCards.length))
-      const winners  = leaders.filter(p => p.purchasedCards.length === minCards)
-
-      set({ currentPlayerIndex: nextIndex, phase: 'ended', winners, moveCount: state.moveCount + 1 })
-      return
-    }
-
-    set({ currentPlayerIndex: nextIndex, moveCount: state.moveCount + 1 })
-  },
+  nextTurn: () => set(advanceGameState(get())),
 
   goHome: () => set(emptyGameState),
+
+  completePurchase: (card: Card) => {
+    const state = get()
+    set(advanceGameState(applyPurchase(state, state.currentPlayerIndex, card)))
+  },
+
+  completeReserve: (card: Card) => {
+    const state = get()
+    set(advanceGameState(applyReserve(state, state.currentPlayerIndex, card)))
+  },
+
+  completeReserveFromDeck: (level: CardLevel) => {
+    const state = get()
+    set(advanceGameState(applyReserveFromDeck(state, state.currentPlayerIndex, level)))
+  },
+
+  completeDrawTokens: (colors: GemColor[]) => {
+    const state = get()
+    set(advanceGameState(applyDrawTokens(state, colors)))
+  },
+
+  completeReturn: (toReturn: Partial<Record<GemColor, number>>) => {
+    const state  = get()
+    const player = state.players[state.currentPlayerIndex]
+    const pGems  = { ...player.gems }
+    const sGems  = { ...state.board.gems }
+
+    for (const [color, count] of Object.entries(toReturn) as [GemColor, number][]) {
+      if (!count || count <= 0 || pGems[color] < count) return
+      pGems[color] -= count
+      sGems[color] += count
+    }
+
+    const next: GameState = {
+      ...state,
+      players: state.players.map((p, i) =>
+        i === state.currentPlayerIndex ? { ...p, gems: pGems } : p
+      ),
+      board: { ...state.board, gems: sGems },
+    }
+    set(advanceGameState(next))
+  },
 
   doAiTurn: () => {
     const state = get()
     const { phase, currentPlayerIndex } = state
     if (phase !== 'playing' && phase !== 'lastRound') return
-    const player = state.players[currentPlayerIndex]
-    if (!player.isCpu) return
+    if (!state.players[currentPlayerIndex].isCpu) return
 
-    // Compute action and apply it — pure function, no intermediate set()
     const action = computeAiAction(state, currentPlayerIndex)
     let next: GameState = state
 
     switch (action.type) {
-      case 'purchase':
-        next = applyPurchase(state, currentPlayerIndex, action.card)
-        break
-      case 'reserve':
-        next = applyReserve(state, currentPlayerIndex, action.card)
-        break
-      case 'reserveFromDeck':
-        next = applyReserveFromDeck(state, currentPlayerIndex, action.level)
-        break
+      case 'purchase':     next = applyPurchase(state, currentPlayerIndex, action.card); break
+      case 'reserve':      next = applyReserve(state, currentPlayerIndex, action.card); break
+      case 'reserveFromDeck': next = applyReserveFromDeck(state, currentPlayerIndex, action.level); break
       case 'drawTokens':
-        if (action.colors.length > 0)
-          next = applyDrawTokens(state, action.colors)
+        if (action.colors.length > 0) next = applyDrawTokens(state, action.colors)
         break
     }
 
-    // Advance turn atomically in the same set()
-    const n = next.players.length
-    const nextIndex = (currentPlayerIndex + 1) % n
-
-    if (next.phase === 'lastRound' && nextIndex === 0) {
-      const maxScore = Math.max(...next.players.map(p => p.score))
-      const leaders  = next.players.filter(p => p.score === maxScore)
-      const minCards = Math.min(...leaders.map(p => p.purchasedCards.length))
-      const winners  = leaders.filter(p => p.purchasedCards.length === minCards)
-      set({ ...next, currentPlayerIndex: nextIndex, phase: 'ended', winners, moveCount: next.moveCount + 1 })
-    } else {
-      set({ ...next, currentPlayerIndex: nextIndex, moveCount: next.moveCount + 1 })
-    }
+    set(advanceGameState(next))
   },
 }))

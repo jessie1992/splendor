@@ -352,13 +352,13 @@ export function Board() {
     }))
   )
   const goHome          = useGameStore(s => s.goHome)
-  const purchaseCard    = useGameStore(s => s.purchaseCard)
-  const reserveCard     = useGameStore(s => s.reserveCard)
-  const reserveFromDeck = useGameStore(s => s.reserveFromDeck)
-  const drawTokens      = useGameStore(s => s.drawTokens)
-  const returnTokens    = useGameStore(s => s.returnTokens)
-  const nextTurn        = useGameStore(s => s.nextTurn)
-  const doAiTurn        = useGameStore(s => s.doAiTurn)
+  const completePurchase        = useGameStore(s => s.completePurchase)
+  const completeReserve         = useGameStore(s => s.completeReserve)
+  const completeReserveFromDeck = useGameStore(s => s.completeReserveFromDeck)
+  const drawTokens              = useGameStore(s => s.drawTokens)
+  const completeDrawTokens      = useGameStore(s => s.completeDrawTokens)
+  const completeReturn          = useGameStore(s => s.completeReturn)
+  const doAiTurn                = useGameStore(s => s.doAiTurn)
 
   const currentPlayer = players[currentPlayerIndex]
 
@@ -367,11 +367,10 @@ export function Board() {
 
   const confirmPurchase = useCallback(() => {
     if (!pendingCard) return
-    purchaseCard(pendingCard)
+    completePurchase(pendingCard)
     setPendingCard(null)
     setPending({})
-    nextTurn()
-  }, [pendingCard, purchaseCard, nextTurn])
+  }, [pendingCard, completePurchase])
 
   // ── Gem selection ─────────────────────────────────────────────────────────
   const [pending, setPending]     = useState<PendingGems>({})
@@ -434,15 +433,15 @@ export function Board() {
       const n = pending[c] ?? 0
       for (let i = 0; i < n; i++) colors.push(c)
     }
-    drawTokens(colors)
-    setPending({})
     if (totalHeld + totalPending > 10) {
+      drawTokens(colors)       // separate set() needed — discard UI reads updated gems
       setDiscard(true)
       setToReturn({})
     } else {
-      nextTurn()
+      completeDrawTokens(colors)  // atomic: draw + advance in one set()
     }
-  }, [isValidSelection, distinctColors, pending, drawTokens, nextTurn, totalHeld, totalPending])
+    setPending({})
+  }, [isValidSelection, distinctColors, pending, drawTokens, completeDrawTokens, totalHeld, totalPending])
 
   const handleToggleReturn = useCallback((color: GemColor) => {
     setToReturn(prev => {
@@ -456,11 +455,10 @@ export function Board() {
   }, [currentPlayer.gems])
 
   const handleConfirmReturn = useCallback(() => {
-    returnTokens(toReturn)
+    completeReturn(toReturn)
     setDiscard(false)
     setToReturn({})
-    nextTurn()
-  }, [returnTokens, toReturn, nextTurn])
+  }, [completeReturn, toReturn])
 
   const handleResetReturn = useCallback(() => setToReturn({}), [])
 
@@ -473,19 +471,17 @@ export function Board() {
 
   const handleReserve = useCallback((card: Card) => {
     if (currentPlayer.reservedCards.length >= 3) return
-    reserveCard(card)
+    completeReserve(card)
     setPendingCard(null)
     setPending({})
-    nextTurn()
-  }, [currentPlayer.reservedCards.length, reserveCard, nextTurn])
+  }, [currentPlayer.reservedCards.length, completeReserve])
 
   const handleReserveFromDeck = useCallback((level: CardLevel) => {
     if (currentPlayer.reservedCards.length >= 3) return
-    reserveFromDeck(level)
+    completeReserveFromDeck(level)
     setPendingCard(null)
     setPending({})
-    nextTurn()
-  }, [currentPlayer.reservedCards.length, reserveFromDeck, nextTurn])
+  }, [currentPlayer.reservedCards.length, completeReserveFromDeck])
 
   const handleCancelPurchase = useCallback(() => setPendingCard(null), [])
   const handleClearGems      = useCallback(() => setPending({}), [])
